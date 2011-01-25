@@ -1,17 +1,53 @@
 package $package;
 
+//This class is auto generated from a wsdl.  Do not edit manually.
+
+## I'm lazy, so I'm over including here....sorry :)
+
+import java.io.Serializable;
 import java.util.List;
 import java.util.Date;
 import org.simpleframework.xml.Element;
 import org.simpleframework.xml.ElementList;
 
-public class $type.name {
+public class $type.name implements Serializable {
+
+## create fields with getters and setters and SimpleXML annotations
+
 #foreach( $field in $type.fields )
-	#if ($field.isList())
-	@ElementList(inline=true)
-	#else
-	@Element
-	#end
-	$field.toString();
+#if ($field.isList())
+	@ElementList(inline=true, required=false)
+#else
+	@Element(required=false)
+#end
+	$field.type $field.name;
+	public $field.type get$field.name () {
+		return $field.name;
+	}
+	public void set$field.name ($field.type val) {
+		$field.name = val;
+	}
+	
+#end
+
+## create a constructor with all fields, if we have any fields
+
+#if( $type.fields.size() > 0)	
+#set( $comma = "" )
+	public $type.name (
+#foreach( $field in $type.fields ) 
+		$comma $field.type $field.name
+#set( $comma = "," )
+#end
+		) {
+#foreach( $field in $type.fields )
+		this.$field.name = $field.name;
 #end	
+	}
+#end	
+	
+## create empty constructor (this is required for simplexml)
+	public $type.name () {
+	}
+
 }

@@ -1,0 +1,24 @@
+package $package;
+
+import org.simpleframework.xml.Attribute;
+import org.simpleframework.xml.Element;
+import org.simpleframework.xml.Path;
+import org.simpleframework.xml.Root;
+import ${typePackage}.*;
+
+@Root(name="SOAP-ENV:Envelope")
+public class ${message.name}Envelope {
+	@Attribute(name="xmlns:SOAP-ENV")
+	public String XXXnamespaceXXX = "http://www.w3.org/2003/05/soap-envelope";
+	@Attribute(name="xmlns:ns1")
+	public String XXXurnXXX = "urn:QuoteEngineServiceWSDL";
+	@Element(name="ns1:${message.name}")
+	@Path("SOAP-ENV:Body")
+	public $message.inputType request;
+	
+	
+	
+	public ${message.name}Envelope($message.inputType request) {
+		this.request = request;
+	}
+}

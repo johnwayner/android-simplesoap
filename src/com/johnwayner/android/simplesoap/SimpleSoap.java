@@ -9,11 +9,15 @@ import java.util.Map;
 import java.util.Properties;
 
 import javax.wsdl.Definition;
+import javax.wsdl.Port;
+import javax.wsdl.Service;
 import javax.wsdl.Types;
 import javax.wsdl.extensions.schema.Schema;
+import javax.wsdl.extensions.soap.SOAPAddress;
 import javax.wsdl.factory.WSDLFactory;
 import javax.wsdl.xml.WSDLReader;
 import javax.wsdl.xml.WSDLWriter;
+import javax.xml.namespace.QName;
 
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
@@ -21,6 +25,8 @@ import org.apache.velocity.app.Velocity;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
+import com.ibm.wsdl.MessageImpl;
 
 public class SimpleSoap {
 
@@ -32,8 +38,17 @@ public class SimpleSoap {
 			WSDLFactory wsdlFactory = WSDLFactory.newInstance();
 		      WSDLReader  wsdlReader  = wsdlFactory.newWSDLReader();
 		      WSDLWriter  wsdlWriter  = wsdlFactory.newWSDLWriter();
+		      
+		      if(args.length < 3) {
+		    	  System.out.println("Usage: XXXX <wsdl> <base package name> <output dir>");
+		    	  System.exit(1);
+		      }
+		      
+		      String wsdlFileName = args[0];
+		      String packageName = args[1];
+		      String outputDirName = args[2];
 
-		      Definition def = wsdlReader.readWSDL(null, "/media/Data/dev/UnitedRoadsShipperAndroid/soap_stuff/service.wsdl");		      
+		      Definition def = wsdlReader.readWSDL(null, wsdlFileName);		      
 		      
 		      Types types = def.getTypes();
 		      List<Schema> elems = types.getExtensibilityElements();
@@ -84,22 +99,76 @@ public class SimpleSoap {
 		    		  }
 		    	  }
 		      }
+		      
+		      Map<QName, MessageImpl> messages = def.getMessages();
+		      
+		      //OMG this is some serious hacking.  The wsdl I care about consistently
+		      //    uses the message name (minus SoapIn/SoapOut) as the input arg and
+		      //    the name plus "Response" as the output argument.  So I'm cheating.
+		      List<Message> messageList = new ArrayList<Message>();
+		      for(QName name : messages.keySet()) {
+		    	  if(name.getLocalPart().endsWith("SoapIn")) {
+		    		  String baseName = name.getLocalPart().replace("SoapIn", "");
+		    		  messageList.add(new Message(baseName, baseName, baseName + "Response"));
+		    	  }
+		      }
+		      
 		      Properties prop = new Properties();
 		      prop.load(SimpleSoap.class.getResourceAsStream("/com/johnwayner/android/simplesoap/velocity.config"));
 		      Velocity.init(prop);
 		      
 		      VelocityContext context = new VelocityContext();
 		      Template complexTypeTemplate = Velocity.getTemplate("com/johnwayner/android/simplesoap/templates/ComplexType.vm");
+		      File outputTypeDir = new File(outputDirName + "/type/");
+		      outputTypeDir.mkdir();
 		      for(ComplexType type : outputTypes) {
 		    	  context.put("type", type);
-		    	  context.put("package", "com.unitedroads.android.shipper.soap.simple.types");
-		    	  File output = new File("/media/Data/dev/UnitedRoadsShipperAndroid/UnitedRoadsShipperAndroid/src/com/unitedroads/android/shipper/soap/simple/types/" + type.name + ".java");
+		    	  context.put("package", packageName + ".type");
+		    	  File output = new File(outputTypeDir, type.name + ".java");
 		    	  System.out.println("output: " + output.getAbsolutePath());
 		    	  FileWriter fw = new FileWriter(output);
 		    	  complexTypeTemplate.merge(context, fw);
 		    	  fw.close();
 		      }
 		      
+		      Template messageRequestTemplate = Velocity.getTemplate("com/johnwayner/android/simplesoap/templates/MessageRequest.vm");
+		      Template messageResponseTemplate = Velocity.getTemplate("com/johnwayner/android/simplesoap/templates/MessageResponse.vm");
+		      outputTypeDir = new File(outputDirName + "/message/");
+		      outputTypeDir.mkdir();
+		      context = new VelocityContext();
+		      for(Message message: messageList) {
+		    	  context.put("message", message);
+		    	  context.put("package", packageName + ".message");
+		    	  context.put("typePackage", packageName + ".type");
+		    	  File reqOutput = new File(outputTypeDir, message.name + "Envelope.java");
+		    	  File resOutput = new File(outputTypeDir, message.outputType + "Envelope.java");
+		    	  System.out.println("output: " + resOutput.getAbsolutePath());
+		    	  System.out.println("output: " + reqOutput.getAbsolutePath());
+		    	  FileWriter fw = new FileWriter(reqOutput);
+		    	  messageRequestTemplate.merge(context, fw);
+		    	  fw.close();
+		    	  fw = new FileWriter(resOutput);
+		    	  messageResponseTemplate.merge(context, fw);
+		    	  fw.close();
+		      }
+		      
+		      context = new VelocityContext();
+		      Template serviceTemplate = Velocity.getTemplate("com/johnwayner/android/simplesoap/templates/Service.vm");
+		      File systemDir = new File(outputDirName);
+		      systemDir.mkdir();
+		      Service service = (Service)def.getServices().values().iterator().next();
+		      context.put("serviceName", service.getQName().getLocalPart());
+		      context.put("messages", messageList);
+		      context.put("package", packageName);
+		      context.put("typePackage", packageName + ".type");
+		      context.put("messagePackage", packageName + ".message");
+		      context.put("endPoint", ((SOAPAddress)((Port)service.getPorts().values().iterator().next()).getExtensibilityElements().get(0)).getLocationURI());
+		      File systemOutput = new File(systemDir, context.get("serviceName") + ".java");
+	    	  System.out.println("output: " + systemOutput.getAbsolutePath());
+	    	  FileWriter fw = new FileWriter(systemOutput);
+	    	  serviceTemplate.merge(context, fw);
+	    	  fw.close();
+	    	  
 		} catch (Exception e) {			
 			e.printStackTrace();
 		}

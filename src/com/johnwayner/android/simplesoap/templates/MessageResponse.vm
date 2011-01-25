@@ -1,0 +1,20 @@
+package $package;
+
+import org.simpleframework.xml.Attribute;
+import org.simpleframework.xml.Element;
+import org.simpleframework.xml.Path;
+import org.simpleframework.xml.Root;
+import ${typePackage}.*;
+
+@Root(name="Envelope", strict=false)
+public class ${message.outputType}Envelope {
+	@Element(name="${message.outputType}")
+	@Path("Body")
+	public $message.outputType response;
+	
+	
+	
+	public ${message.outputType}Envelope() {
+		super();
+	}
+}

@@ -1,0 +1,44 @@
+package $package;
+
+import java.io.ByteArrayOutputStream;
+
+import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ByteArrayEntity;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.simpleframework.xml.Serializer;
+import org.simpleframework.xml.core.Persister;
+
+import ${typePackage}.*;
+import ${messagePackage}.*;
+
+public class $serviceName {
+
+	public static final String END_POINT = "$endPoint";
+
+#foreach( $message in $messages )
+	public static $message.outputType ${message.name}($message.inputType input) throws Exception {
+		HttpClient client = new DefaultHttpClient();
+		HttpPost post = new HttpPost(END_POINT);
+		post.addHeader("Content-Type", "text/xml");
+
+		post.setEntity(getEntity(new ${message.name}Envelope(input)));
+		HttpResponse response = client.execute(post);
+		String content = IOUtils.toString(response.getEntity().getContent());
+		${message.outputType}Envelope res = new Persister().read(${message.outputType}Envelope.class, content);
+		return res.response;
+	}
+	
+#end
+	
+	private static HttpEntity getEntity(Object o) throws Exception {
+		ByteArrayOutputStream stream = new ByteArrayOutputStream(); 
+		Serializer serializer = new Persister();
+		serializer.write(o, stream);
+		ByteArrayEntity entity = new ByteArrayEntity(stream.toByteArray());
+		return entity;
+	}
+}

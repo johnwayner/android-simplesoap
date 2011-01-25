@@ -26,7 +26,11 @@ public class Field {
 
 
 	public String getType() {
-		return type;
+		if(isList) {
+			return "List<" + type + ">";
+		} else {
+			return type;
+		}
 	}
 
 
