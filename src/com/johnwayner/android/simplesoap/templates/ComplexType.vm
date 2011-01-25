@@ -1,0 +1,17 @@
+package $package;
+
+import java.util.List;
+import java.util.Date;
+import org.simpleframework.xml.Element;
+import org.simpleframework.xml.ElementList;
+
+public class $type.name {
+#foreach( $field in $type.fields )
+	#if ($field.isList())
+	@ElementList(inline=true)
+	#else
+	@Element
+	#end
+	$field.toString();
+#end	
+}
