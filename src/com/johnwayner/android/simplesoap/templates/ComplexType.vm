@@ -16,7 +16,7 @@ public class $type.name implements Serializable {
 
 #foreach( $field in $type.fields )
 #if ($field.isList())
-	@ElementList(inline=true, required=false)
+	@ElementList(inline=true, required=false, entry="${field.name}")
 #else
 	@Element(required=false)
 #end
