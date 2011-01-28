@@ -1,0 +1,78 @@
+* What is this?
+This is a total hack to generate classes from a 1.1 or 1.2 (NOT 2.0!) WSDL (using [[http://www.jcp.org/en/jsr/detail?id=110][WSDL4J]]) for use with the [[http://simple.sourceforge.net/home.php][Simple XML Serializer]] on Android.
+
+This project does not itself run on Android.  This is just a plain old java project.  It generates java files that need to be put into
+an Android project's source tree.  That Android project needs to also have the Simple XML library available.
+
+* Why?
+It seems everyone is using KSoap2 on Android...and frankly...I'm too lazy to write all the POJOs and methods to create envelopes and and and...
+
+It was more interesting to create this generator than do that crap.  Plus, if they change the WSDL on me, I can just rerun this thing and it'll mostly work.
+
+Plus, I don't need a special library to do SOAP stuff on the Android -- just Simple XML
+
+* I just looked at the code, OMFG! You suck!  Ever heard of classes??
+Yeah, yeah.  This is an embarrassing hack to get my current, paying, project going.  The only reason it's up here on a public repo
+is so that I don't have to host it and it doesn't take one of my private slots :)  Well, there's a slight chance others could use it...
+
+* Can I use this?
+Maybe.  Honestly, I doubt this will work for anyone out of the box.  It might, but I've only tested it on the one WSDL that
+I actually needed to use it on.  It certainly makes some assumptions that may not apply to your WSDL.
+
+Probably the best use you'll get out of this is to use it as a starting point for your own hack.  Or, if you're awesome, you can
+pretty up this code and make it more generally useful, then submit a pull request. ;)
+
+If your WSDL is from this decade, it's probably 2.0.  For some reason my client is using 1.2.  So, that's what this code expects.
+If you need 2.0, check out [[http://ws.apache.org/woden/][Woden]].  It does 2.0, but not 1.1/2.  You should be able to use that to parse the WSDL, then traverse
+whatever it generates to populate my POJOs (see below).
+
+* I'm still reading...totally desperate here.
+
+Alright.  Well, the main class is SimpleSoap.  It hacks its way through the DOM created by WSDL4J, collects information into some
+POJOs, then uses [[http://velocity.apache.org/][Velocity]] to render out java classes.
+
+The POJOs are:
+   - ComplexType
+     - which contains a list of Fields
+   - Message (these are SOAP operations)
+   
+SimpleSoap's main() uses three parameters:
+   - The WSDL filename
+   - The package that will be the root of the gen'd classes
+     if you put 'my.soap' you will get:
+     - my.soap.WhateverSoapService  (class that contains actual SOAP calls)
+     - my.soap.type (package that contains all the complex type classes)
+     - my.soap.message (package that contains all the SOAP envelope classes)
+   - The output directory -- this should match your package name otherwise the project you're genning for will be upset at you.
+
+After running this thing, one of the output classes is a service.  The service class will have the name of the WSDL service name (it's
+one of the tags in there).  In that class there will be a method for each operation that you can use like: 
+
+#+BEGIN_SRC
+new AsyncTask<INPUT, Boolean, OUTPUT>() {
+									
+    @Override
+    protected OUTPUT doInBackground(QuotePrice... params) {
+	return MyService.MyOperation(new MyOperationInputTyep(params[0]));										
+    }
+									
+    protected void onPostExecute(OUTPUT result) {
+	progBar.setVisibility(View.GONE);
+	if(null != result) {
+	    //Do stuff with the result
+	} else {
+	    Toast.makeText(getApplicationContext(), "Something is wrong!", Toast.LENGTH_LONG).show();
+	}
+    }
+									
+}.execute(INPUT); 
+#+END_SRC
+
+I chose to just do all the logging and exception handling in the generated service call instead of replicating that all over.
+One downside is that the code that could do something about the exception only has a NULL to work with instead of the actual
+Exception.  I may change this eventually...
+
+* THE FUTURE!!!!!
+I think this project could prove useful if it was cleaned up and given WSDL2.0 support.  But I doubt I'll spend too much time on it.
+
+But, who knows!
