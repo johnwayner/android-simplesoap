@@ -37,7 +37,6 @@ public class SimpleSoap {
 		try {
 			WSDLFactory wsdlFactory = WSDLFactory.newInstance();
 		      WSDLReader  wsdlReader  = wsdlFactory.newWSDLReader();
-		      WSDLWriter  wsdlWriter  = wsdlFactory.newWSDLWriter();
 		      
 		      if(args.length < 3) {
 		    	  System.out.println("Usage: XXXX <wsdl> <base package name> <output dir>");
