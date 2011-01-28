@@ -1,6 +1,10 @@
 package $package;
 
+//This class is auto generated from a wsdl.  Do not edit manually.
+
 import java.io.ByteArrayOutputStream;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpEntity;
@@ -11,34 +15,68 @@ import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.simpleframework.xml.Serializer;
 import org.simpleframework.xml.core.Persister;
+import org.simpleframework.xml.transform.Matcher;
+import org.simpleframework.xml.transform.Transform;
 
 import ${typePackage}.*;
 import ${messagePackage}.*;
+
+import android.util.Log;
+
 
 public class $serviceName {
 
 	public static final String END_POINT = "$endPoint";
 
 #foreach( $message in $messages )
-	public static $message.outputType ${message.name}($message.inputType input) throws Exception {
-		HttpClient client = new DefaultHttpClient();
-		HttpPost post = new HttpPost(END_POINT);
-		post.addHeader("Content-Type", "text/xml");
-
-		post.setEntity(getEntity(new ${message.name}Envelope(input)));
-		HttpResponse response = client.execute(post);
-		String content = IOUtils.toString(response.getEntity().getContent());
-		${message.outputType}Envelope res = new Persister().read(${message.outputType}Envelope.class, content);
-		return res.response;
+	public static $message.outputType ${message.name}($message.inputType input) {
+		try {
+			HttpClient client = new DefaultHttpClient();
+			HttpPost post = new HttpPost(END_POINT);
+			post.addHeader("Content-Type", "text/xml");
+	
+			post.setEntity(getEntity(new ${message.name}Envelope(input)));
+			HttpResponse response = client.execute(post);
+			String content = IOUtils.toString(response.getEntity().getContent());
+			${message.outputType}Envelope res = new Persister(new SOAPDateFormatMatcher()).read(${message.outputType}Envelope.class, content);
+			return res.response;
+		} catch(Exception e) {
+			Log.e("$serviceName", "Exception in ${message.name}.", e);
+			return null;
+		}
 	}
 	
 #end
 	
 	private static HttpEntity getEntity(Object o) throws Exception {
 		ByteArrayOutputStream stream = new ByteArrayOutputStream(); 
-		Serializer serializer = new Persister();
+		Serializer serializer = new Persister(new SOAPDateFormatMatcher());
 		serializer.write(o, stream);
 		ByteArrayEntity entity = new ByteArrayEntity(stream.toByteArray());
 		return entity;
 	}
+	
+	//Helper transform since simplexml can't parse 8601 dates properly.
+	private static class SOAPDateFormatMatcher implements Matcher, Transform<Date> {
+	protected static final SimpleDateFormat SOAP_formatWithTZ = new SimpleDateFormat("yyyy-MM-dd");
+      public Transform match(Class type) throws Exception {
+         if(type == Date.class) {
+            return this;
+         }
+         return null;
+      }
+
+      public Date read(String value) throws Exception {
+    	  SOAP_formatWithTZ.setLenient(false);
+    	  value.replaceAll("-\\d\\d:\\d\\d", ""); //remove timezone.
+         Date ret = SOAP_formatWithTZ.parse(value);
+         return ret;
+      }
+
+      public String write(Date value) throws Exception {
+         String valueStr = SOAP_formatWithTZ.format(value);
+         return valueStr;
+      }
+      
+   }
 }

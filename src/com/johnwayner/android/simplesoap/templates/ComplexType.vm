@@ -14,6 +14,12 @@ public class $type.name implements Serializable {
 
 ## create fields with getters and setters and SimpleXML annotations
 
+#if( $type.fields.size() == 0 )
+## slap down a dummy field otherwise simplexml barfs.
+	@Element(required=false)
+	public Object dummy;
+#else
+
 #foreach( $field in $type.fields )
 #if ($field.isList())
 	@ElementList(inline=true, required=false, entry="${field.name}")
@@ -28,6 +34,7 @@ public class $type.name implements Serializable {
 		$field.name = val;
 	}
 	
+#end
 #end
 
 ## create a constructor with all fields, if we have any fields
@@ -48,6 +55,21 @@ public class $type.name implements Serializable {
 	
 ## create empty constructor (this is required for simplexml)
 	public $type.name () {
+	}
+	
+## create clone method
+	public $type.name clone($type.name target) {
+		$type.name clone;
+		if(null != target)
+			clone = target;
+		else
+			clone = new ${type.name}();
+		
+#foreach( $field in $type.fields )
+	    clone.$field.name = this.$field.name;
+#end
+	
+		return clone;
 	}
 
 }

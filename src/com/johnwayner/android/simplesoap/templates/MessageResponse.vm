@@ -1,5 +1,7 @@
 package $package;
 
+//This class is auto generated from a wsdl.  Do not edit manually.
+
 import org.simpleframework.xml.Attribute;
 import org.simpleframework.xml.Element;
 import org.simpleframework.xml.Path;
