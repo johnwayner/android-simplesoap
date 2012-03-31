@@ -1,5 +1,5 @@
 * What is this?
-This is a total hack to generate classes from a 1.1 or 1.2 (NOT 2.0!) WSDL (using [[http://www.jcp.org/en/jsr/detail?id=110][WSDL4J]]) for use with the [[http://simple.sourceforge.net/home.php][Simple XML Serializer]] on Android.
+This is a total hack to generate classes from a 1.1 or 1.2 (NOT 2.0!) WSDL (using [[http://sourceforge.net/projects/wsdl4j/][WSDL4J]]) for use with the [[http://simple.sourceforge.net/home.php][Simple XML Serializer]] on Android.
 
 This project does not itself run on Android.  This is just a plain old java project.  It generates java files that need to be put into
 an Android project's source tree.  That Android project needs to also have the Simple XML library available.
